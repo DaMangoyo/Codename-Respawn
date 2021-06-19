@@ -246,14 +246,13 @@ screen quick_menu():
             xalign 0.5
             yalign 1.0
 
-            #textbutton _("回退") action Rollback()
+            textbutton _("回退") action Rollback()
             textbutton _("历史") action ShowMenu('history')
             textbutton _("快进") action Skip() alternate Skip(fast=True, confirm=True)
             textbutton _("自动") action Preference("auto-forward", "toggle")
             textbutton _("保存") action ShowMenu('save')
-            textbutton _("读档") action ShowMenu('load')
-            #textbutton _("快存") action QuickSave()
-            #textbutton _("快读") action QuickLoad()
+            textbutton _("快存") action QuickSave()
+            textbutton _("快读") action QuickLoad()
             textbutton _("设置") action ShowMenu('preferences')
 
 
@@ -293,7 +292,7 @@ screen navigation():
 
         if main_menu:
 
-            textbutton _("故事模式") action ShowMenu("story_menu")
+            textbutton _("开始游戏") action Start()
 
         else:
 
@@ -305,7 +304,11 @@ screen navigation():
 
         textbutton _("设置") action ShowMenu("preferences")
 
-        if not main_menu:
+        if _in_replay:
+
+            textbutton _("结束回放") action EndReplay(confirm=True)
+
+        elif not main_menu:
 
             textbutton _("标题界面") action MainMenu()
 
@@ -320,11 +323,6 @@ screen navigation():
 
             ## “退出”按钮在 iOS 上被禁止设置，在安卓和网页上也不是必需的。
             textbutton _("退出") action Quit(confirm=not main_menu)
-
-
-        #if _in_replay:
-
-        #    textbutton _("结束回放") action EndReplay(confirm=True)    
 
 
 style navigation_button is gui_button
@@ -349,13 +347,11 @@ screen main_menu():
     ## 此语句可确保替换掉任何其他菜单界面。
     tag menu
 
-    style_prefix "main_menu"
-
     add gui.main_menu_background
 
     ## 此空框可使标题菜单变暗。
     frame:
-        pass
+        style "main_menu_frame"
 
     ## “use”语句将其他的界面包含进此界面。标题界面的实际内容在导航界面中。
     use navigation
@@ -363,6 +359,8 @@ screen main_menu():
     if gui.show_name:
 
         vbox:
+            style "main_menu_vbox"
+
             text "[config.name!t]":
                 style "main_menu_title"
 
@@ -578,10 +576,36 @@ screen save():
 
 
 screen load():
-
+ 
+ 
+ 
     tag menu
-
-    use file_slots(_("读取游戏"))
+ 
+    $ latest_file = renpy.newest_slot(regexp=None)
+ 
+    $ l_f_page = latest_file.split('-',1)[0] #所在页 #auto-1表示自动存档页第一位
+ 
+    $ l_f_name = latest_file.split('-',1)[1] #槽位名
+ 
+ 
+ 
+ 
+ 
+    use file_slots(_("读取"))
+ 
+ 
+ 
+    fixed:
+ 
+        textbutton "从上次中断处开始":
+ 
+            action [FileLoad(
+ 
+            name=l_f_name, confirm=True, page=l_f_page, ),print(l_f_name,l_f_page,renpy.newest_slot(regexp=None))]
+ 
+            align(0.9,0.05)
+ 
+            style "return_button"
 
 
 screen file_slots(title):
@@ -730,18 +754,13 @@ screen preferences():
                     textbutton _("选项后继续") action Preference("after choices", "toggle")
                     textbutton _("忽略转场") action InvertSelected(Preference("transitions", "toggle"))
 
-                ## 可以在此处添加类型为“radio_pref”或“check_pref”的其他“vbox”，
-                ## 以添加其他创建者定义的首选项设置。
                 vbox:
                     style_prefix "radio"
                     label _("语言")
-                    textbutton _("简体中文") action Language(None)
+                    textbutton _("简体中文") action Language(None)    
 
-                vbox:
-                    style_prefix "radio"
-                    label _("使用样板")
-                    textbutton _("无") action NullAction()    
-
+                ## 可以在此处添加类型为“radio_pref”或“check_pref”的其他“vbox”，
+                ## 以添加其他创建者定义的首选项设置。
 
             null height (4 * gui.pref_spacing)
 
@@ -1493,10 +1512,10 @@ style vslider:
     base_bar Frame("gui/phone/slider/vertical_[prefix_]bar.png", gui.vslider_borders, tile=gui.slider_tile)
     thumb "gui/phone/slider/vertical_[prefix_]thumb.png"
 
-style slider_pref_vbox:
+style slider_vbox:
     variant "small"
     xsize None
 
-style slider_pref_slider:
+style slider_slider:
     variant "small"
     xsize 900
